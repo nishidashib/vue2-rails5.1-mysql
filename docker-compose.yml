@@ -1,0 +1,62 @@
+version: '3'
+
+services:
+  # Frontend
+  front:
+    build: front/.
+    image: front
+    container_name: front
+    privileged: true
+    networks:
+      - frontend
+    ports:
+      - "80:80"
+    volumes:
+      - ./front:/myapp
+      - node_modules:/myapp/node_modules
+      - ~/.ssh:/root/.ssh:ro
+
+  # Backend
+  api:
+    build: api/.
+    image: api
+    container_name: api
+    hostname: api
+    privileged: true
+    ports:
+      - "3000:3000"
+    networks:
+      - frontend
+      - backend
+    volumes:
+      - ./api:/myapp
+      - bundler:/bundle
+      - ~/.ssh:/root/.ssh:ro
+
+  # Database
+  db:
+    image: mysql
+    container_name: db
+    hostname: db
+    command: --character-set-server=utf8 --collation-server=utf8_unicode_ci
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: 1
+    networks:
+      - backend
+    volumes:
+      - db-volume:/var/lib/mysql
+      - ./db/initdb.d:/docker-entrypoint-initdb.d:ro
+
+networks:
+  frontend:
+  backend:
+    ipam:
+      config:
+      - subnet: 192.168.42.0/24
+
+volumes:
+  node_modules:
+  bundler:
+  db-volume:
